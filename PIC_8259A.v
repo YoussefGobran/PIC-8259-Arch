@@ -1,6 +1,5 @@
-
 module PIC_8259A(
-  input rd_neg, wr_neg, a0, sp_neg, inta_neg, vcc, gnd,
+  input cs_neg,rd_neg, wr_neg, a0, sp_neg, inta_neg, vcc, gnd,
   input [0:7] ir,
   inout [0:7] data_inout,
   inout [0:2] cas,
@@ -49,10 +48,11 @@ module PIC_8259A(
       assign {priorities_list_1[j],priorities_list_2[j],priorities_list_3[j]}= priorities[j];
     end
   endgenerate
-  reg [0:2] current_highest_priority_id;
+  wire [0:2] current_highest_priority_id;
+  wire [0:2] current_highest_priority_id_with_isr;
 
-  reg[0:31] temp_counter;
   integer temp;
+  reg interrupt_start_flag;
   /////////////////////////////////////////////////////////////////////////////////////////////////////////
   INIT_AND_CONFIG_CW_HANDLER IACWH (
     data_inout,
@@ -67,8 +67,8 @@ module PIC_8259A(
     my_slave_id,
     aeoi_and_eoi_neg_flag,
     imr,
-    ir_level,
-    control_bits,
+    ir_level_ocw2,
+    control_bits_ocw2,
     ocw2_output_flag,
     automatic_rotation_mode_flag,  
     read_type_flag,
@@ -78,8 +78,8 @@ module PIC_8259A(
   CASCADING_STATUS_HANDLER CSH (
     single_mode_flag,
     sp_neg,
-    inta_neg,
-    interrupt_active_id, // only for master mode
+    interrupt_cycle_counter,
+    current_highest_priority_id_with_isr, // only for master mode
     slaves_connected_flag, // only for master mode
     my_slave_id, // only for slave mode
     cas,
@@ -104,45 +104,44 @@ module PIC_8259A(
     priorities_list_2,
     priorities_list_3,
     current_highest_priority_id,
+    current_highest_priority_id_with_isr,
     interrupt_active
   );
 
-  assign data_inout=output_data_bus_control?data_bus_buffer_output:read_active_flag?read_data_buffer:8'bzzzzzzzz;
+  assign data_inout=(!cs_neg&&!wr_neg)?8'bzzzzzzzz: (!inta_neg && output_data_bus_control)?data_bus_buffer_output:read_active_flag?read_data_buffer:8'bzzzzzzzz;
   
   always @(posedge ready_to_accept_interrupts_flag)begin
+    isr=0;
+    irr=0;
+    output_data_bus_control=0;
+    interrupt_cycle_counter=0;
+    int=0;
+    interrupt_start_flag=0;
     for(temp=0;temp<8;temp=temp+1)begin
       priorities[temp]<=7-temp;
     end
   end
-  always @(posedge ir) begin
+  always @( ir[0], ir[1], ir[2], ir[3], ir[4], ir[5], ir[6], ir[7]) begin
     irr<=ir;
   end
 
   always @(inta_neg) begin
-    if(interrupt_cycle_counter<=5&&interrupt_cycle_counter>=1&& (single_mode_flag || sp_neg || (!sp_neg && slave_active_interrupt_flag))) begin
+    if(interrupt_cycle_counter<=5&&interrupt_cycle_counter>=1&& (single_mode_flag || sp_neg||slave_active_interrupt_flag)) begin
       interrupt_cycle_counter<=interrupt_cycle_counter+1;
     end
   end
-
+  
+  /////////////////////////////////////////////////////////////////////////////
   always @(posedge interrupt_active) begin
-    if(ready_to_accept_interrupts_flag)begin
-      if(interrupt_cycle_counter ==0)begin
-        interrupt_cycle_counter=1;
-      end
-      else if (interrupt_cycle_counter ==3&&current_highest_priority_id!=interrupt_active_id&&priorities[current_highest_priority_id]>priorities[interrupt_active_id]) begin
-        // handles if higher prioirty get handles during waiting for the second inta cycle
-        int=0;
-        interrupt_cycle_counter=1;
-        // start counter and then reactivate interrupt
-        for (temp = 0; temp<65536;temp=temp+1 ) begin
-          temp_counter=temp_counter+1;
-        end
-        int=1;
-      end
+    if(ready_to_accept_interrupts_flag&&interrupt_cycle_counter ==0)begin
+        interrupt_start_flag=1;
     end
   end
-
-  always @(interrupt_cycle_counter) begin
+  always @(posedge interrupt_start_flag)begin
+    interrupt_cycle_counter=1;
+    interrupt_start_flag=0;
+  end
+  always @(interrupt_cycle_counter[0],interrupt_cycle_counter[1],interrupt_cycle_counter[2]) begin
     if (interrupt_cycle_counter==1) begin
       // means waiting for first inta pulse
       //send on interrupt output 
@@ -170,7 +169,7 @@ module PIC_8259A(
     end
     else if(interrupt_cycle_counter==4)begin
       //setting of D0-A7 of vector address
-      if(single_mode_flag || !sp_neg || slaves_connected_flag[interrupt_active_id] == 0 ) begin 
+      if(single_mode_flag || !sp_neg || (sp_neg&&slaves_connected_flag[interrupt_active_id] == 0 )) begin 
         output_data_bus_control=1;
         data_bus_buffer_output={last_five_bits_of_vector_address,interrupt_active_id};
       end
@@ -193,10 +192,18 @@ module PIC_8259A(
         int=0;
       end
     end
+    if(interrupt_cycle_counter==0)begin
+      if(ready_to_accept_interrupts_flag&&interrupt_active)begin
+        interrupt_start_flag=1;
+      end
+    end
   end
   always @(ocw2_output_flag)begin
     if(interrupt_cycle_counter==5)begin
-      case (control_bits)
+      $display("Control bits: %b",control_bits_ocw2);
+      $display("Interrupt Active ID bits: %b",interrupt_active_id);
+      $display("IR LEVEL OCW2: %b",ir_level_ocw2);
+      case (control_bits_ocw2)
         3'b100: begin // non specific eoi
             isr[interrupt_active_id]=0;
             interrupt_cycle_counter=0;
@@ -210,7 +217,6 @@ module PIC_8259A(
           end
         end
         3'b101: begin //rotate on non specific eoi
-          
           for(temp=0;temp<8;temp=temp+1)begin
             if(priorities[temp]<priorities[interrupt_active_id])begin
                 priorities[temp]=priorities[temp]+1;
