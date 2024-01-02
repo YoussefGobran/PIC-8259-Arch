@@ -13,8 +13,8 @@
 
 1. [Contribution Table](#contribution-table)
 2. [Project Description](#project-description)
-3. [Description for all signals used](#description-for-all-signals-used)
-4. [Block Diagram](#block-diagram)
+3. [Block Diagram](#block-diagram)
+4. [Description for all signals used](#description-for-all-signals-used)
 5. [Brief description of the testing strategy](#brief-description-of-the-testing-strategy)
    1. [First Testbench](#1-first-testbench)
    2. [Second Testbench](#2-second-testbench)
@@ -52,6 +52,11 @@ Design and implement a Programmable Interrupt Controller (PIC) based on the 8259
 - AEOI
 - Specific Rotation
 - Reading Status
+
+---
+## Block Diagram:
+
+<img src="Archi 8259 Project Block Diagram.jpg" alt="Block Diagram">
 
 ---
 
@@ -100,12 +105,6 @@ Design and implement a Programmable Interrupt Controller (PIC) based on the 8259
 | current_highest_priority_id[0:2] | The id of the corresponding higher priority interrupt which is calculated from the masked_irr. |
 | current_highest_priority_id_with_isr[0:2] | The id of the corresponding higher priority interrupt which is calculated from the masked_irr with the isr used in cascading mode to release the cascading line. |
 | interrupt_start_flag              | To start the interrupt cycle and increase the interrupt cycle. |
-
----
-
-## Block Diagram:
-
-*(Include Block Diagram Image)*
 
 ---
 
