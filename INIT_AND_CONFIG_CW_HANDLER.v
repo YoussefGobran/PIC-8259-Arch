@@ -1,4 +1,3 @@
-
 module INIT_AND_CONFIG_CW_HANDLER(
   input [0:7] data_bus_buffer,
   input cs_neg,
@@ -23,16 +22,17 @@ module INIT_AND_CONFIG_CW_HANDLER(
 
   output wire ready_to_accept_interrupts_flag
   );
-  reg icw_counter;
-  reg icw_taken_max_limit;
+  reg[0:2] icw_counter;
+  reg[0:2] icw_taken_max_limit;
   reg icw4_is_needed_flag;
 
   assign ready_to_accept_interrupts_flag = (icw_counter == icw_taken_max_limit);
 
-  always@(negedge wr_neg) begin
+  always@(negedge cs_neg) begin
 
     if (!cs_neg && !wr_neg) begin
       if(data_bus_buffer[4] && !a0) begin //ICW1
+      $display("inside icw1");
         ocw2_output_flag=0;
         control_bits=3'b010;
         imr=0;
@@ -40,6 +40,7 @@ module INIT_AND_CONFIG_CW_HANDLER(
         automatic_rotation_mode_flag=0;
         icw_counter=1;  
         icw_taken_max_limit=2;
+        ir_level=0;
 
         if(data_bus_buffer[0]) begin
           icw_taken_max_limit=icw_taken_max_limit+1;
@@ -61,12 +62,17 @@ module INIT_AND_CONFIG_CW_HANDLER(
       end
 
       else if(a0 && icw_counter==1)begin //ICW2
-        last_five_bits_of_vector_address=data_bus_buffer[3:7];
+      $display("inside icw2");
+        last_five_bits_of_vector_address[0]=data_bus_buffer[7];
+        last_five_bits_of_vector_address[1]=data_bus_buffer[6];
+        last_five_bits_of_vector_address[2]=data_bus_buffer[5];
+        last_five_bits_of_vector_address[3]=data_bus_buffer[4];
+        last_five_bits_of_vector_address[4]=data_bus_buffer[3];
         icw_counter=icw_counter+1; 
-        
       end
 
       else if(!single_mode_flag && a0 && icw_counter ==2) begin //ICW3
+        $display("inside icw3");
         icw_counter=icw_counter+1; 
 
         if(sp_neg)begin //if master
@@ -74,12 +80,16 @@ module INIT_AND_CONFIG_CW_HANDLER(
         end
 
         else begin
-          my_slave_id<=data_bus_buffer[0:2];
+          my_slave_id[0]=data_bus_buffer[2];
+          my_slave_id[1]=data_bus_buffer[1];
+          my_slave_id[2]=data_bus_buffer[0];
         end
 
       end
 
       else if (icw4_is_needed_flag && a0 && icw_counter >=2 && icw_counter < icw_taken_max_limit) begin //ICW4
+        $display("inside icw4");
+       
         aeoi_and_eoi_neg_flag=data_bus_buffer[1];
         icw_counter=icw_counter+1;
       end
@@ -90,7 +100,9 @@ module INIT_AND_CONFIG_CW_HANDLER(
         end
 
         else if (!a0 && !data_bus_buffer[4] && !data_bus_buffer[3]) begin // OCW2
-          ir_level=data_bus_buffer[0:2];
+          ir_level[0]=data_bus_buffer[2];
+          ir_level[1]=data_bus_buffer[1];
+          ir_level[2]=data_bus_buffer[0];
           control_bits=data_bus_buffer[5:7];
           ocw2_output_flag=~ocw2_output_flag;
           if(control_bits==1'b001)automatic_rotation_mode_flag=1;
