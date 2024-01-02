@@ -4,9 +4,9 @@ module PIC_TB_CASCADE_MODE_AEOI_EDGE;
   // Edge Trigger
   // AEOI 
   reg cs_neg_master;
-  reg rd_neg_master;
-  reg wr_neg_master;
-  reg a0_master;
+  reg rd_neg;
+  reg wr_neg;
+  reg a0;
   reg sp_neg_master;
   reg inta_neg;
   reg vcc;
@@ -23,18 +23,12 @@ module PIC_TB_CASCADE_MODE_AEOI_EDGE;
   wire interrupt_flag_master;
 
   reg cs_neg_slave_0;
-  reg rd_neg_slave_0;
-  reg wr_neg_slave_0;
-  reg a0_slave_0;
   reg sp_neg_slave_0;
   reg [0:7] ir_slave_0;
   wire interrupt_flag_slave_0;
   
 
   reg cs_neg_slave_5;
-  reg rd_neg_slave_5;
-  reg wr_neg_slave_5;
-  reg a0_slave_5;
   reg sp_neg_slave_5;
   reg [0:7] ir_slave_5;
   wire interrupt_flag_slave_5;
@@ -56,9 +50,9 @@ module PIC_TB_CASCADE_MODE_AEOI_EDGE;
 
   PIC_8259A pic_slave_0(
     cs_neg_slave_0,
-    rd_neg_slave_0,
-    wr_neg_slave_0,
-    a0_slave_0,
+    rd_neg,
+    wr_neg,
+    a0,
     sp_neg_slave_0,
     inta_neg,
     vcc,
@@ -70,9 +64,9 @@ module PIC_TB_CASCADE_MODE_AEOI_EDGE;
   );
   PIC_8259A pic_slave_5(
     cs_neg_slave_5,
-    rd_neg_slave_5,
-    wr_neg_slave_5,
-    a0_slave_5,
+    rd_neg,
+    wr_neg,
+    a0,
     sp_neg_slave_5,
     inta_neg,
     vcc,
@@ -85,9 +79,9 @@ module PIC_TB_CASCADE_MODE_AEOI_EDGE;
   
   PIC_8259A pic_master(
     cs_neg_master,
-    rd_neg_master,
-    wr_neg_master,
-    a0_master,
+    rd_neg,
+    wr_neg,
+    a0,
     sp_neg_master,
     inta_neg,
     vcc,
@@ -108,9 +102,9 @@ module PIC_TB_CASCADE_MODE_AEOI_EDGE;
 
     // initial Variables of Master PIC
     cs_neg_master=1;
-    wr_neg_master=1;
-    rd_neg_master=1;
-    a0_master=0;
+    wr_neg=1;
+    rd_neg=1;
+    a0=0;
     sp_neg_master=1;
     ir_master_1=0;
     ir_master_2=0;
@@ -121,17 +115,11 @@ module PIC_TB_CASCADE_MODE_AEOI_EDGE;
 
     // initial Variables of Slave-0
     cs_neg_slave_0=1;
-    wr_neg_slave_0=1;
-    rd_neg_slave_0=1;
-    a0_slave_0=0;
     sp_neg_slave_0=0;
     ir_slave_0=0;
     
     // initial Variables of Slave-5
     cs_neg_slave_5=1;
-    wr_neg_slave_5=1;
-    rd_neg_slave_5=1;
-    a0_slave_5=0;
     sp_neg_slave_5=0;
     ir_slave_5=0;
 
@@ -139,136 +127,136 @@ module PIC_TB_CASCADE_MODE_AEOI_EDGE;
     //ICW1
     #10
     data_bus_buffer=8'b10001000;
-    wr_neg_master=0;
+    wr_neg=0;
     cs_neg_master=0;
-    a0_master=0;
+    a0=0;
     #10
     data_bus_buffer=8'bzzzzzzzz;
     cs_neg_master=1;
-    wr_neg_master=1;
+    wr_neg=1;
     
     //ICW2
     #10
     data_bus_buffer=8'b00010111;
-    a0_master=1;
-    wr_neg_master=0;
+    a0=1;
+    wr_neg=0;
     cs_neg_master=0;
     #10
     data_bus_buffer=8'bzzzzzzzz;
     cs_neg_master=1;
-    wr_neg_master=1;
+    wr_neg=1;
 
     //ICW3
     #10
     data_bus_buffer=8'b10000100;
-    a0_master=1;
-    wr_neg_master=0;
+    a0=1;
+    wr_neg=0;
     cs_neg_master=0;
     #10
     data_bus_buffer=8'bzzzzzzzz;
     cs_neg_master=1;
-    wr_neg_master=1;
+    wr_neg=1;
 
     //ICW4
     #10
     data_bus_buffer=8'b11000000;
-    a0_master=1;
-    wr_neg_master=0;
+    a0=1;
+    wr_neg=0;
     cs_neg_master=0;
     #10
     data_bus_buffer=8'bzzzzzzzz;
     cs_neg_master=1;
-    wr_neg_master=1;
+    wr_neg=1;
 
     // Intilize of slave-0 PIC ICWs
     //ICW1
     #10
     data_bus_buffer=8'b10001000;
-    wr_neg_slave_0=0;
+    wr_neg=0;
     cs_neg_slave_0=0;
-    a0_slave_0=0;
+    a0=0;
     #10
     data_bus_buffer=8'bzzzzzzzz;
     cs_neg_slave_0=1;
-    wr_neg_slave_0=1;
+    wr_neg=1;
     
     //ICW2
     #10
     data_bus_buffer=8'b00010011;
-    a0_slave_0=1;
-    wr_neg_slave_0=0;
+    a0=1;
+    wr_neg=0;
     cs_neg_slave_0=0;
     #10
     data_bus_buffer=8'bzzzzzzzz;
     cs_neg_slave_0=1;
-    wr_neg_slave_0=1;
+    wr_neg=1;
 
     //ICW3
     #10
     data_bus_buffer=8'b00000000;
-    a0_slave_0=1;
-    wr_neg_slave_0=0;
+    a0=1;
+    wr_neg=0;
     cs_neg_slave_0=0;
     #10
     data_bus_buffer=8'bzzzzzzzz;
     cs_neg_slave_0=1;
-    wr_neg_slave_0=1;
+    wr_neg=1;
 
     //ICW4
     #10
     data_bus_buffer=8'b11000000;
-    a0_slave_0=1;
-    wr_neg_slave_0=0;
+    a0=1;
+    wr_neg=0;
     cs_neg_slave_0=0;
     #10
     data_bus_buffer=8'bzzzzzzzz;
     cs_neg_slave_0=1;
-    wr_neg_slave_0=1;
+    wr_neg=1;
 
     // Intilize of slave-5 PIC ICWs
     //ICW1
     #10
     data_bus_buffer=8'b10001000;
-    wr_neg_slave_5=0;
+    wr_neg=0;
     cs_neg_slave_5=0;
-    a0_slave_5=0;
+    a0=0;
     #10
     data_bus_buffer=8'bzzzzzzzz;
     cs_neg_slave_5=1;
-    wr_neg_slave_5=1;
+    wr_neg=1;
     
     //ICW2
     #10
     data_bus_buffer=8'b00010001;
-    a0_slave_5=1;
-    wr_neg_slave_5=0;
+    a0=1;
+    wr_neg=0;
     cs_neg_slave_5=0;
     #10
     data_bus_buffer=8'bzzzzzzzz;
     cs_neg_slave_5=1;
-    wr_neg_slave_5=1;
+    wr_neg=1;
 
     //ICW3
     #10
     data_bus_buffer=8'b10100000;
-    a0_slave_5=1;
-    wr_neg_slave_5=0;
+    a0=1;
+    wr_neg=0;
     cs_neg_slave_5=0;
     #10
     data_bus_buffer=8'bzzzzzzzz;
     cs_neg_slave_5=1;
-    wr_neg_slave_5=1;
+    wr_neg=1;
 
     //ICW4
     #10
     data_bus_buffer=8'b11000000;
-    a0_slave_5=1;
-    wr_neg_slave_5=0;
+    a0=1;
+    wr_neg=0;
     cs_neg_slave_5=0;
     #10
     data_bus_buffer=8'bzzzzzzzz;
     cs_neg_slave_5=1;
-    wr_neg_slave_5=1;
+    wr_neg=1;
 
     // first test with ir-master 1 (not connected to slave)
     #10
